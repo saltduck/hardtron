@@ -36,8 +36,9 @@ module.exports = {
       addr
   },
   async getOwner() {
-    if (gNetwork.type == 'TRON')
-      return gNetwork.web3.defaultAddress.base58;
+    if (gNetwork.type == 'TRON') {
+      return tronWeb.defaultAddress.base58;
+    }
     const [owner] = await hre.ethers.getSigners();
     return owner.address;
   },
@@ -50,8 +51,9 @@ module.exports = {
     return tronWeb;
   },
 
-  async deploy(factoryName, contractName, opt = {}) {
-    let issuerAddress = tronWeb.defaultAddress.base58;
+  async deploy(factoryName, contractName, parameters, opt = {}) {
+    let issuerAddress = await this.getOwner();
+    // console.log(issuerAddress)
     issuerAddress = tronWeb.address.toHex(issuerAddress);
 
     let contract;
@@ -61,27 +63,31 @@ module.exports = {
       contract = await hre.ethers.getContractFactory(factoryName);
     }
 
-    let bytecode = contract.bytecode;
+    if (gNetwork.type == 'TRON') {
+      const bytecode = contract.bytecode;
+      const {abi} = await hre.artifacts.readArtifact(factoryName)
+      let options = {
+        feeLimit: 1_000_000_000,
+        abi: JSON.stringify(abi), //Abi string
+        bytecode: bytecode,       //Bytecode, default hexString
+        name: contractName,       //Contract name string
+        owner_address: issuerAddress,
+      };
+      options.parameters = parameters;
+      let data = await tronWeb.transactionBuilder.createSmartContract(options, issuerAddress);
 
-    let options = {
-      feeLimit: 10000_000_000,
-      abi: abis[factoryName],//Abi string
-      bytecode: bytecode,//Bytecode, default hexString
-      name: contractName,//Contract name string
-      owner_address: issuerAddress,
-    };
-    // console.log(opt);process.exit(0)
-    if (opt.hasOwnProperty("parameters")) {
-      options.parameters = opt.parameters;
+      const signedTxn = await tronWeb.trx.sign(data);
+      const receipt = await tronWeb.trx.sendRawTransaction(signedTxn);
+      console.log(contractName + " deployed at: " + tronWeb.address.fromHex(receipt.transaction.contract_address));
+      await this.sleep(5);
+      let contractAddress = receipt.transaction.contract_address;
+      return await tronWeb.contract(abi, contractAddress);  
+    } else {
+      const c = await contract.deploy(...parameters)
+      await c.deployed()
+      console.log(contractName + " deployed at: " + c.address);
+      return c
     }
-    let data = await tronWeb.transactionBuilder.createSmartContract(options, issuerAddress);
-
-    const signedTxn = await tronWeb.trx.sign(data);
-    const receipt = await tronWeb.trx.sendRawTransaction(signedTxn);
-    console.log(contractName + ": " + tronWeb.address.fromHex(receipt.transaction.contract_address));
-    await sleep(5);
-    let contractAddress = receipt.transaction.contract_address;
-    return await tronWeb.contract(JSON.parse(abis[factoryName]), contractAddress);
   },
 
   async getContractAt(name, addr) {
@@ -104,7 +110,7 @@ module.exports = {
                 return Reflect.apply(...arguments).call()
               } else {
                 return Reflect.apply(...arguments).send({
-                  feeLimit: 1500000000,
+                  feeLimit: 500_000_000,
                   callValue: 0,
                   shouldPollResponse: false
                 })
