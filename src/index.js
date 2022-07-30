@@ -8,20 +8,20 @@ let gNetwork = {};
 module.exports = {
   async setNetwork(name) {
     gNetwork.name = name
-    if (['tron', 'shasta'].indexOf(args.network) > -1) {
+    if (['tron', 'shasta'].indexOf(name) > -1) {
       gNetwork.type = 'TRON'
-      if (args.network == 'tron') {
+      if (name == 'tron') {
         const api = 'https://api.trongrid.io'
         const privateKey = process.env.PRIVATE_KEY_TRON_MAIN
         gNetwork.web3 = await this.init(api, privateKey)
-      } else if (args.network == 'shasta') {
+      } else if (name == 'shasta') {
         const api = 'https://api.shasta.trongrid.io'
         const privateKey = process.env.PRIVATE_KEY_TRON_SHASTA
         gNetwork.web3 = await this.init(api, privateKey)
       }
     } else {
       gNetwork.type = 'ETH'
-      await hre.changeNetwork(args.network)
+      await hre.changeNetwork(name)
     }
   },
   getNetworkType() {
@@ -54,7 +54,6 @@ module.exports = {
   async deploy(factoryName, contractName, parameters, opt = {}) {
     let issuerAddress = await this.getOwner();
     // console.log(issuerAddress)
-    issuerAddress = tronWeb.address.toHex(issuerAddress);
 
     let contract;
     if(opt.hasOwnProperty("libraries")) {
@@ -64,6 +63,7 @@ module.exports = {
     }
 
     if (gNetwork.type == 'TRON') {
+      issuerAddress = tronWeb.address.toHex(issuerAddress);
       const bytecode = contract.bytecode;
       const {abi} = await hre.artifacts.readArtifact(factoryName)
       let options = {
@@ -129,7 +129,14 @@ module.exports = {
     })
   },
   addressToHex(address) {
+    if (address.substr(0, 2) == '0x')
+      return address
     return "0x" + tronWeb.address.toHex(address).substr(2, 42);
+  },
+  addressToHex2(address) {
+    if (address.substr(0, 2) == '0x')
+      return address
+    return tronWeb.address.toHex(address);
   },
   async parseArgs() {
     const parser = new ArgumentParser({})
