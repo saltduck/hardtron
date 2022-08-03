@@ -1,4 +1,5 @@
 const { ArgumentParser } = require('argparse');
+const readlineSync = require('readline-sync');
 const TronWeb = require('tronweb');
 const hre = require("hardhat");
 
@@ -54,6 +55,9 @@ module.exports = {
   },
 
   async deploy(factoryName, contractName, parameters, opt = {}) {
+    const ok = readlineSync.question('Contract <' + contractName + '> will be deployed on *** ' + gNetwork.name.toUpperCase() + ' ***. Do you really want to continue?(y/N)');
+    if (ok.toLowerCase() != 'y') return
+
     let issuerAddress = await this.getOwner();
     // console.log(issuerAddress)
 
