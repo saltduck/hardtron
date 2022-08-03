@@ -6,6 +6,8 @@ let tronWeb;
 let gNetwork = {};
 
 module.exports = {
+  ZERO_ADDRESS_HEX: "410000000000000000000000000000000000000000",
+
   async setNetwork(name) {
     gNetwork.name = name
     if (['tron', 'shasta'].indexOf(name) > -1) {
@@ -121,6 +123,14 @@ module.exports = {
       })
     }
   },
+  async waitForTransaction(tx) {
+    if (gNetwork.type == 'ETH') {
+      await tx.wait()
+    } else {
+      console.log(tx)
+      await this.sleep(5)    
+    }
+  },
   async sleep(time) {
     await new Promise((resolve, reject) => {
       setTimeout(() => {
@@ -138,6 +148,11 @@ module.exports = {
       return address
     return tronWeb.address.toHex(address);
   },
+  ZERO_ADDRESS() {
+    if (gNetwork.type == 'TRON')
+      return "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb"
+    return "0x0000000000000000000000000000000000000000"
+  }, 
   async parseArgs() {
     const parser = new ArgumentParser({})
     parser.add_argument('-n', '--network', {help: 'network name(BSC/ROPSTEN/TRON/SHASTA/...)'})
