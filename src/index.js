@@ -73,7 +73,7 @@ module.exports = {
       const bytecode = contract.bytecode;
       const {abi} = await hre.artifacts.readArtifact(factoryName)
       let options = {
-        feeLimit: 1_000_000_000,
+        feeLimit: 1_500_000_000,
         abi: JSON.stringify(abi), //Abi string
         bytecode: bytecode,       //Bytecode, default hexString
         name: contractName,       //Contract name string
@@ -116,7 +116,7 @@ module.exports = {
                 return Reflect.apply(...arguments).call()
               } else {
                 return Reflect.apply(...arguments).send({
-                  feeLimit: 500_000_000,
+                  feeLimit: 1_000_000_000,
                   callValue: 0,
                   shouldPollResponse: false
                 })
