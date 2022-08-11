@@ -144,10 +144,10 @@ module.exports = {
     let msg = ''
     if (cause.substr(0,8) == '08c379a0') {
       // Error(string)
-      msg = asc2str(cause.substr(136, 64))
+      msg = 'Error("' + asc2str(cause.substr(136, 64)) +'")'
     } else if (cause.substr(0, 8) == '4e487b71') {
       // Panic(uint256)
-      msg = parseInt(cause.substr(8, 64), 16)
+      msg = 'Panic(' + parseInt(cause.substr(8, 64), 16) + ')'
     }
     return msg
   },
@@ -164,7 +164,7 @@ module.exports = {
           if (result.receipt.result !== 'SUCCESS') {
             console.log('Transaction Failed. Because of:')
             for (cause of result.contractResult) {
-              console.log('\t%s (%s).', cause, this.parseError(cause))  
+              console.log('\t%s %s.', cause, this.parseError(cause))
             }
           }
         }
