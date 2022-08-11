@@ -140,6 +140,17 @@ module.exports = {
       })
     }
   },
+  parseError(cause) {
+    let msg = ''
+    if (cause.substr(0,8) == '08c379a0') {
+      // Error(string)
+      msg = asc2str(cause.substr(136, 64))
+    } else if (cause.substr(0, 8) == '4e487b71') {
+      // Panic(uint256)
+      msg = parseInt(cause.substr(8, 64), 16)
+    }
+    return msg
+  },
   async waitForTransaction(tx) {
     if (gNetwork.type == 'ETH') {
       console.log(await tx.wait())
@@ -147,18 +158,13 @@ module.exports = {
       console.log(tx)
       do {
         await this.sleep(3)
-        result = await gNetwork.web3.trx.getTransactionInfo(tx)
+        result = await gNetwork.web3.trx.getUnconfirmedTransactionInfo(tx)
         // console.log(result)
         if (result.receipt) {
           if (result.receipt.result !== 'SUCCESS') {
             console.log('Transaction Failed. Because of:')
             for (cause of result.contractResult) {
-              let msg = ''
-              if (cause.substr(0,8) == '08c379a0') {
-                // Error(string)
-                msg = asc2str(cause.substr(136, 64))
-              }
-              console.log('\t%s (%s).', cause, msg)  
+              console.log('\t%s (%s).', cause, this.parseError(cause))  
             }
           }
         }
