@@ -6,6 +6,15 @@ const hre = require("hardhat");
 let tronWeb;
 let gNetwork = {};
 
+function asc2str(s) {
+  let result = []
+  for (var i =0; i < s.length; i += 2) {
+    const c = parseInt(s.substr(i, 2), 16)
+    result.push(String.fromCharCode(c))
+  }
+  return result.join("")
+}
+
 module.exports = {
   ZERO_ADDRESS_HEX: "410000000000000000000000000000000000000000",
 
@@ -129,10 +138,27 @@ module.exports = {
   },
   async waitForTransaction(tx) {
     if (gNetwork.type == 'ETH') {
-      await tx.wait()
+      console.log(await tx.wait())
     } else {
       console.log(tx)
-      await this.sleep(5)    
+      do {
+        await this.sleep(3)
+        result = await gNetwork.web3.trx.getTransactionInfo(tx)
+        // console.log(result)
+        if (result.receipt) {
+          if (result.receipt.result !== 'SUCCESS') {
+            console.log('Transaction Failed. Because of:')
+            for (cause of result.contractResult) {
+              let msg = ''
+              if (cause.substr(0,8) == '08c379a0') {
+                // Error(string)
+                msg = asc2str(cause.substr(136, 64))
+              }
+              console.log('\t%s (%s).', cause, msg)  
+            }
+          }
+        }
+      } while (typeof(result.receipt) == 'undefined')
     }
   },
   async sleep(time) {
