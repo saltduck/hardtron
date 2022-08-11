@@ -34,7 +34,11 @@ module.exports = {
     } else {
       gNetwork.type = 'ETH'
       await hre.changeNetwork(name)
+      gNetwork.web3 = hre.ethers
     }
+  },
+  web3() {
+    return gNetwork.web3
   },
   getNetworkType() {
     return gNetwork.type
