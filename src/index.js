@@ -75,28 +75,26 @@ module.exports = {
     let issuerAddress = await this.getOwner();
     // console.log(issuerAddress)
 
-    let contract;
+    let Contract;
     if(opt.hasOwnProperty("libraries")) {
-      contract = await hre.ethers.getContractFactory(factoryName, {libraries:opt.libraries});
+      Contract = await hre.ethers.getContractFactory(factoryName, {libraries:opt.libraries});
     } else {
-      contract = await hre.ethers.getContractFactory(factoryName);
+      Contract = await hre.ethers.getContractFactory(factoryName);
     }
 
+    let contract;
     if (gNetwork.type == 'TRON') {
       issuerAddress = tronWeb.address.toHex(issuerAddress);
-      const bytecode = contract.bytecode;
-      let abi;
-      if (!opt.abiProxy) {
-        abi = (await hre.artifacts.readArtifact(factoryName)).abi
-      } else {
-        abi = []
-        abiImpl = (await hre.artifacts.readArtifact(contractName)).abi
-        for (v of abiImpl) {
-          if (v.type !== 'constructor') {
-            abi.push(v)
-          }
-        }
-        abi = abi.concat(opt.abiProxy)
+      const bytecode = Contract.bytecode;
+      let abi = (await hre.artifacts.readArtifact(factoryName)).abi
+      if (opt.isProxy) {
+        const abiImpl = (await hre.artifacts.readArtifact(contractName)).abi
+        // for (v of abiImpl) {
+        //   if (v.type !== 'constructor') {
+        //     abi.push(v)
+        //   }
+        // }
+        abi = abi.concat(abiImpl)
       }
       let options = {
         feeLimit: 1_500_000_000,
@@ -110,16 +108,15 @@ module.exports = {
 
       const signedTxn = await tronWeb.trx.sign(data);
       const receipt = await tronWeb.trx.sendRawTransaction(signedTxn);
-      console.log(displayName + " deployed at: " + tronWeb.address.fromHex(receipt.transaction.contract_address));
-      await this.waitForTransaction(receipt.transaction.txID, true);
+      await this.waitForTransaction(receipt.transaction.txID);
       let contractAddress = receipt.transaction.contract_address;
-      return await tronWeb.contract(abi, contractAddress);
+      contract = await this.getContractAt(displayName, tronWeb.address.fromHex(contractAddress));
     } else {
-      const c = await contract.deploy(...parameters)
-      await c.deployed()
-      console.log(displayName + " deployed at: " + c.address);
-      return c
+      contract = await Contract.deploy(...parameters)
+      await contract.deployed()
     }
+    console.log(displayName + " deployed at: " + contract.address);
+    return contract
   },
 
   async getContractAt(name, addr) {
