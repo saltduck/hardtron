@@ -68,7 +68,8 @@ module.exports = {
   },
 
   async deploy(factoryName, contractName, parameters, opt = {}) {
-    const ok = readlineSync.question('Contract <' + contractName + '> will be deployed on *** ' + gNetwork.name.toUpperCase() + ' ***. Do you really want to continue?(y/N)');
+    const displayName = opt.isProxy? factoryName: contractName
+    const ok = readlineSync.question('Contract <' + displayName + '> will be deployed on *** ' + gNetwork.name.toUpperCase() + ' ***. Do you really want to continue?(y/N)');
     if (ok.toLowerCase() != 'y') return
 
     let issuerAddress = await this.getOwner();
@@ -84,7 +85,19 @@ module.exports = {
     if (gNetwork.type == 'TRON') {
       issuerAddress = tronWeb.address.toHex(issuerAddress);
       const bytecode = contract.bytecode;
-      const {abi} = await hre.artifacts.readArtifact(factoryName)
+      let abi;
+      if (!opt.abiProxy) {
+        abi = (await hre.artifacts.readArtifact(factoryName)).abi
+      } else {
+        abi = []
+        abiImpl = (await hre.artifacts.readArtifact(contractName)).abi
+        for (v of abiImpl) {
+          if (v.type !== 'constructor') {
+            abi.push(v)
+          }
+        }
+        abi = abi.concat(opt.abiProxy)
+      }
       let options = {
         feeLimit: 1_500_000_000,
         abi: JSON.stringify(abi), //Abi string
@@ -97,14 +110,14 @@ module.exports = {
 
       const signedTxn = await tronWeb.trx.sign(data);
       const receipt = await tronWeb.trx.sendRawTransaction(signedTxn);
-      console.log(contractName + " deployed at: " + tronWeb.address.fromHex(receipt.transaction.contract_address));
-      await this.sleep(5);
+      console.log(displayName + " deployed at: " + tronWeb.address.fromHex(receipt.transaction.contract_address));
+      await this.waitForTransaction(receipt.transaction.txID, true);
       let contractAddress = receipt.transaction.contract_address;
-      return await tronWeb.contract(abi, contractAddress);  
+      return await tronWeb.contract(abi, contractAddress);
     } else {
       const c = await contract.deploy(...parameters)
       await c.deployed()
-      console.log(contractName + " deployed at: " + c.address);
+      console.log(displayName + " deployed at: " + c.address);
       return c
     }
   },
@@ -151,18 +164,22 @@ module.exports = {
     }
     return msg
   },
-  async waitForTransaction(tx) {
+  async waitForTransaction(tx, confirmed=false) {
     if (gNetwork.type == 'ETH') {
-      console.log(await tx.wait())
+      const result = await tx.wait()
+      console.log(result.transactionHash)
     } else {
       console.log(tx)
       do {
         await this.sleep(3)
-        result = await gNetwork.web3.trx.getUnconfirmedTransactionInfo(tx)
+        if (confirmed)
+          result = await gNetwork.web3.trx.getTransactionInfo(tx)
+        else
+          result = await gNetwork.web3.trx.getUnconfirmedTransactionInfo(tx)
         // console.log(result)
         if (result.receipt) {
           if (result.receipt.result !== 'SUCCESS') {
-            console.log('Transaction Failed. Because of:')
+            console.log('Transaction ' + result.receipt.result + '. Because of:')
             for (cause of result.contractResult) {
               console.log('\t%s %s.', cause, this.parseError(cause))
             }
