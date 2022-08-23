@@ -162,8 +162,9 @@ module.exports = {
     return msg
   },
   async waitForTransaction(tx, confirmed=false) {
+    let result
     if (gNetwork.type == 'ETH') {
-      const result = await tx.wait()
+      result = await tx.wait()
       console.log(result.transactionHash)
     } else {
       console.log(tx)
@@ -184,6 +185,7 @@ module.exports = {
         }
       } while (typeof(result.receipt) == 'undefined')
     }
+    return result
   },
   async sleep(time) {
     await new Promise((resolve, reject) => {
