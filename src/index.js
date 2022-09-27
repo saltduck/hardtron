@@ -161,6 +161,22 @@ module.exports = {
     }
     return msg
   },
+  parseTxData(contract, funcname, txdata) {
+    return contract.interface.decodeFunctionData(funcname, txdata);
+  },
+  // Estimate how many energy will be used for TRON
+  //    functionSignature: 'distributeFees(address[])'
+  //    params: [{type:'address[]', value:['TP9kyEaTJJz7YZtyyTHpcnKwM4pMQMTHx1','TNUC9Qb1rRpS5CbWLmNMxXBjyFoydXjWFR']}]
+  async gasEstimate(contract, functionSignature, params) {
+    let res = await tronWeb.transactionBuilder.triggerConstantContract(
+      contract.address,
+      functionSignature,
+      {},
+      params,
+      tronWeb.defaultAddress.hex
+    )
+    return res.energy_usded
+  },
   async waitForTransaction(tx, confirmed=false) {
     let result
     if (gNetwork.type == 'ETH') {
