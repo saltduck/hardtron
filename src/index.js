@@ -175,7 +175,7 @@ module.exports = {
       params,
       tronWeb.defaultAddress.hex
     )
-    return res.energy_usded
+    return res.energy_used
   },
   async waitForTransaction(tx, confirmed=false) {
     let result
