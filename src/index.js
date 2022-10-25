@@ -2,6 +2,7 @@ const { ArgumentParser } = require('argparse');
 const readlineSync = require('readline-sync');
 const TronWeb = require('tronweb');
 const hre = require("hardhat");
+const utils = require("./utils");
 
 let tronWeb;
 let gNetwork = {};
@@ -232,5 +233,6 @@ module.exports = {
     args = parser.parse_args()
     await this.setNetwork(args.network)
     return args.function
-  }
+  },
+  ...utils,
 }
