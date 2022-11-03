@@ -16,6 +16,15 @@ function asc2str(s) {
   return result.join("")
 }
 
+function init(api, privateKey) {
+  tronWeb = new TronWeb({
+    fullHost: api,
+    headers: {"TRON-PRO-API-KEY": process.env.TRON_API_KEY},
+    privateKey: privateKey
+  })
+  return tronWeb;
+}
+
 module.exports = {
   ZERO_ADDRESS_HEX: "410000000000000000000000000000000000000000",
 
@@ -26,11 +35,12 @@ module.exports = {
       if (name == 'tron') {
         const api = 'https://api.trongrid.io'
         const privateKey = process.env.PRIVATE_KEY_TRON_MAIN
-        gNetwork.web3 = await this.init(api, privateKey)
+        gNetwork.web3 = init(api, privateKey)
+        // console.log("*tronWeb=", tronWeb, gNetwork.web3)
       } else if (name == 'shasta') {
         const api = 'https://api.shasta.trongrid.io'
         const privateKey = process.env.PRIVATE_KEY_TRON_SHASTA
-        gNetwork.web3 = await this.init(api, privateKey)
+        gNetwork.web3 = init(api, privateKey)
       }
     } else {
       gNetwork.type = 'ETH'
@@ -58,14 +68,6 @@ module.exports = {
     }
     const [owner] = await hre.ethers.getSigners();
     return owner.address;
-  },
-  async init(api, privateKey) {
-    tronWeb = new TronWeb({
-      fullHost: api,
-      headers: {"TRON-PRO-API-KEY": process.env.TRON_API_KEY},
-      privateKey: privateKey
-    })
-    return tronWeb;
   },
 
   async deploy(factoryName, contractName, parameters, opt = {}) {
@@ -109,7 +111,10 @@ module.exports = {
 
       const signedTxn = await tronWeb.trx.sign(data);
       const receipt = await tronWeb.trx.sendRawTransaction(signedTxn);
-      await this.waitForTransaction(receipt.transaction.txID);
+      if (!receipt.result) {
+        console.log(receipt)
+      }
+      await this.waitForTransaction(receipt.txid);
       let contractAddress = receipt.transaction.contract_address;
       contract = await this.getContractAt(displayName, tronWeb.address.fromHex(contractAddress));
     } else {
@@ -214,6 +219,7 @@ module.exports = {
   addressToHex(address) {
     if (address.substr(0, 2) == '0x')
       return address
+    // console.log("tronWeb=", tronWeb)
     return "0x" + tronWeb.address.toHex(address).substr(2, 42);
   },
   addressToHex2(address) {
