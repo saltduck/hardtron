@@ -137,6 +137,9 @@ module.exports = {
           if (['then', 'abi', 'address', 'methodInstances'].indexOf(prop) > -1) {
             return Reflect.get(target, prop)
           }
+          if (prop == "populateTransaction") {
+            return (new ethers.Contract(this.addressToHex(addr), abi)).populateTransaction
+          }
           return new Proxy(target[prop], {
             apply: function(target2, ctx, args) {
               // console.log(ctx.keys)
@@ -164,6 +167,8 @@ module.exports = {
     } else if (cause.substr(0, 8) == '4e487b71') {
       // Panic(uint256)
       msg = 'Panic(' + parseInt(cause.substr(8, 64), 16) + ')'
+    } else {
+      msg = asc2str(cause)
     }
     return msg
   },
