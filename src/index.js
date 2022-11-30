@@ -241,9 +241,10 @@ module.exports = {
     const parser = new ArgumentParser({})
     parser.add_argument('-n', '--network', {help: 'network name(BSC/ROPSTEN/TRON/SHASTA/...)'})
     parser.add_argument('-f', '--function', {help: 'function name you want to call?'})
+    parser.add_argument('args', {nargs: '*', help: 'extra args'})
     args = parser.parse_args()
     await this.setNetwork(args.network)
-    return args.function
+    return [args.function, args.args]
   },
   ...utils,
 }
