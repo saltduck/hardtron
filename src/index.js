@@ -189,30 +189,35 @@ module.exports = {
     return res.energy_used
   },
   async waitForTransaction(tx, confirmed=false) {
-    let result
-    if (gNetwork.type == 'ETH') {
-      result = await tx.wait()
-      console.log(result.transactionHash)
+    if (tx.data) {
+      console.log(tx.to, "==>", tx.data)
+      return tx
     } else {
-      console.log(tx)
-      do {
-        await this.sleep(3)
-        if (confirmed)
-          result = await gNetwork.web3.trx.getTransactionInfo(tx)
-        else
-          result = await gNetwork.web3.trx.getUnconfirmedTransactionInfo(tx)
-        // console.log(result)
-        if (result.receipt) {
-          if (result.receipt.result !== 'SUCCESS') {
-            console.log('Transaction ' + result.receipt.result + '. Because of:')
-            for (cause of result.contractResult) {
-              console.log('\t%s %s.', cause, this.parseError(cause))
+      let result
+      if (gNetwork.type == 'ETH') {
+        result = await tx.wait()
+        console.log(result.transactionHash)
+      } else {
+        console.log(tx)
+        do {
+          await this.sleep(3)
+          if (confirmed)
+            result = await gNetwork.web3.trx.getTransactionInfo(tx)
+          else
+            result = await gNetwork.web3.trx.getUnconfirmedTransactionInfo(tx)
+          // console.log(result)
+          if (result.receipt) {
+            if (result.receipt.result !== 'SUCCESS') {
+              console.log('Transaction ' + result.receipt.result + '. Because of:')
+              for (cause of result.contractResult) {
+                console.log('\t%s %s.', cause, this.parseError(cause))
+              }
             }
           }
-        }
-      } while (typeof(result.receipt) == 'undefined')
+        } while (typeof(result.receipt) == 'undefined')
+      }
+      return result  
     }
-    return result
   },
   async sleep(time) {
     await new Promise((resolve, reject) => {
