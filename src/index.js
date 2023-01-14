@@ -189,7 +189,7 @@ module.exports = {
     return res.energy_used
   },
   async waitForTransaction(tx, confirmed=false) {
-    if (tx.data) {
+    if (!tx.hash) {
       console.log(tx.to, "==>", tx.data)
       return tx
     } else {
