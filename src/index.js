@@ -190,7 +190,7 @@ module.exports = {
   },
   async waitForTransaction(tx, confirmed=false) {
     if (!tx.hash) {
-      console.log(tx.to, "==>", tx.data)
+      console.log(this.formatAddress(tx.to), "==>", tx.data)
       return tx
     } else {
       let result
