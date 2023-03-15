@@ -248,7 +248,9 @@ module.exports = {
     parser.add_argument('-f', '--function', {help: 'function name you want to call?'})
     parser.add_argument('args', {nargs: '*', help: 'extra args'})
     args = parser.parse_args()
-    await this.setNetwork(args.network)
+    if (args.network) {
+        await this.setNetwork(args.network)
+    }
     return [args.function, args.args]
   },
   ...utils,
