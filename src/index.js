@@ -138,7 +138,7 @@ module.exports = {
             return Reflect.get(target, prop)
           }
           if (prop == "populateTransaction") {
-            return (new ethers.Contract(this.addressToHex(addr), abi)).populateTransaction
+            return (new hre.ethers.Contract(this.addressToHex(addr), abi)).populateTransaction
           }
           return new Proxy(target[prop], {
             apply: function(target2, ctx, args) {
