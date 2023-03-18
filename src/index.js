@@ -100,7 +100,7 @@ module.exports = {
         abi = abi.concat(abiImpl)
       }
       let options = {
-        feeLimit: 1_500_000_000,
+        feeLimit: opt.hasOwnProperty("feeLimit") ? opt.feeLimit : 2_000_000_000,
         abi: JSON.stringify(abi), //Abi string
         bytecode: bytecode,       //Bytecode, default hexString
         name: contractName,       //Contract name string
